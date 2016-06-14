@@ -1,6 +1,6 @@
 systems({
   wordpress: {
-    depends: ['mysql'],
+    depends: ["mysql"],
     image: {"docker": "azukiapp/php-apache"},
     provision: [
       "./install-wordpress.sh",
@@ -10,8 +10,10 @@ systems({
     shell: "/bin/bash",
     wait: 20,
     mounts: {
-      '/azk/app': sync("."),
-      '/azk/app/node_modules': persistent("node_modules")
+      "/azk/app":                   sync(".", { shell: true }),
+      "/azk/app/node_modules":      persistent("node_modules"),
+      "/azk/app/public":            persistent("public"),
+      "/azk/app/public/wp-content": path("public/wp-content")
     },
     scalable: {"default": 1},
     http: {
@@ -34,6 +36,7 @@ systems({
     },
     ports: {
       data: "3306:3306/tcp",
+      livereload: "35729:35729/tcp"
     },
     envs: {
       MYSQL_USER         : "azk",
@@ -47,6 +50,18 @@ systems({
       MYSQL_HOST    : "#{net.host}",
       MYSQL_PORT    : "#{net.port.data}",
       MYSQL_DATABASE: "#{envs.MYSQL_DATABASE}"
+    },
+  },
+  phpmyadmin: {
+    depends: ["mysql"],
+    image: { docker: "reduto/phpmyadmin" },
+    wait: 25,
+    scalable: {default: 1, limit: 1},
+    http: {
+      domains: [ "#{system.name}.#{azk.default_domain}" ]
+    },
+    ports: {
+      http: "80/tcp",
     },
   }
 });
